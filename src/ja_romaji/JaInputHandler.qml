@@ -35,6 +35,11 @@ InputHandler {
             candidates.clear()
             var prim = ""
             var len = anthy.segments()
+            
+            // keep track of candidates already in the list
+            // so we don't add duplicates
+            var included_phrases = {}
+            
             // the "primary" choice is the concatenation of the first candidate
             // for all segments
             for (var i = 0; i < len; i++) {
@@ -42,15 +47,12 @@ InputHandler {
             }
             if (prim.length > 0) {
                 candidates.append({text: prim, type: "full", segment: len, candidate: 0})
+                included_phrases[prim] = true
             }
             
             var katakana = Parser.hiragana_to_katakana(str)
             var katakana_item = {text: katakana, type: "full", segment: -1, candidate: -1}
             
-            // keep track of candidates already in the list
-            // so we don't add duplicates
-            var included_phrases = {}
-            included_phrases[prim] = true
             
             len = anthy.segment_candidates(0)
             for (var i = 0; i < len; i++) {
@@ -68,7 +70,7 @@ InputHandler {
                 }
             }
             
-            if (!(katakana in included_phrases)) {
+            if (!(katakana in included_phrases) && katakana !== "") {
                 candidates.insert(Math.min(5, candidates.count), katakana_item)
             }
             
