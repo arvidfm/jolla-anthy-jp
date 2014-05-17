@@ -10,36 +10,36 @@ import "../.."
 import "parse_romaji.js" as Parser
 
 InputHandler {
-    
+
     property string preedit
     property var trie
     property bool trie_built: false
-    
+
     Component.onCompleted: init()
-    
+
     function init() {
         if (!Parser.trie_built) {
             Parser.build_hiragana_trie()
         }
-        
+
         anthy.update_candidates('')
     }
-    
+
     Anthy {
         id: anthy
-        
+
         property var candidates: ListModel { }
-        
+
         function update_candidates(str) {
             anthy.set_string(str)
             candidates.clear()
             var prim = ""
             var len = anthy.segments()
-            
+
             // keep track of candidates already in the list
             // so we don't add duplicates
             var included_phrases = {}
-            
+
             // the "primary" choice is the concatenation of the first candidate
             // for all segments
             for (var i = 0; i < len; i++) {
@@ -49,11 +49,11 @@ InputHandler {
                 candidates.append({text: prim, type: "full", segment: len, candidate: 0})
                 included_phrases[prim] = true
             }
-            
+
             var katakana = Parser.hiragana_to_katakana(str)
             var katakana_item = {text: katakana, type: "full", segment: -1, candidate: -1}
-            
-            
+
+
             len = anthy.segment_candidates(0)
             for (var i = 0; i < len; i++) {
                 var s = anthy.get_candidate(0, i)
@@ -69,11 +69,11 @@ InputHandler {
                     candidates.append({text: s, type: "partial", segment: 0, candidate: i})
                 }
             }
-            
+
             if (!(katakana in included_phrases) && katakana !== "") {
                 candidates.insert(Math.min(5, candidates.count), katakana_item)
             }
-            
+
             anthy.set_prediction_string(str)
             var pred = anthy.predictions()
             // don't add more than 15 predictions
@@ -87,10 +87,10 @@ InputHandler {
                     candidates.insert(Math.min(i + 1, candidates.count), {text: cand, type: "prediction", segment: 0, candidate: i})
                 }
             }
-            
+
             candidatesUpdated()
         }
-        
+
         function acceptPhrase(index, preedit) {
             var item = candidates.get(index)
             console.log("accepting", index)
@@ -117,44 +117,82 @@ InputHandler {
                 console.log("commited to text editor")
             }
         }
-        
+
         signal candidatesUpdated
     }
 
     topItem: Component {
-        Row {
-            SilicaListView {
-                id: listView
-                model: anthy.candidates
-                orientation: ListView.Horizontal
-                width: parent.width // - moreButton.width
-                // I have no idea why height: 70 makes the top row smaller
-                // than for Xt9CpInputHandler and Xt9InputHandler even though
-                // they both specify 70 as well
-                height: 80 // 70
-                delegate: BackgroundItem {
-                    id: backGround
-                    onClicked: accept(model.index) //selectPhrase(model.text, model.index)
-                    width: candidateText.width + Theme.paddingLarge * 2
-                    height: parent ? parent.height : 0
+        TopItem {
+            id: topItem
+            Row {
+                SilicaListView {
+                    id: listView
+                    model: anthy.candidates
+                    orientation: ListView.Horizontal
+                    width: topItem.width
+                    height: topItem.height
+                    boundsBehavior: !keyboard.expandedPaste && Clipboard.hasText ? Flickable.DragOverBounds : Flickable.StopAtBounds
+                    header: pasteComponent
+                    delegate: BackgroundItem {
+                        id: backGround
+                        onClicked: accept(model.index)
+                        width: candidateText.width + Theme.paddingLarge * 2
+                        height: topItem.height
 
-                    Text {
-                        id: candidateText
-                        anchors.centerIn: parent
-                        color: (backGround.down || index === 0) ? Theme.highlightColor : Theme.primaryColor
-                        font { pixelSize: Theme.fontSizeSmall; family: Theme.fontFamily }
-                        text: model.text // anthy.candidates
+                        Text {
+                            id: candidateText
+                            anchors.centerIn: parent
+                            color: (backGround.down || index === 0) ? Theme.highlightColor : Theme.primaryColor
+                            font { pixelSize: Theme.fontSizeSmall; family: Theme.fontFamily }
+                            text: model.text
+                        }
                     }
-                }
-                //onCountChanged: positionViewAtBeginning()
-                Connections {
-                    target: anthy
-                    onCandidatesUpdated: listView.positionViewAtBeginning()
+                    onCountChanged: positionViewAtBeginning()
+                    onDraggingChanged: {
+                        if (!dragging && !keyboard.expandedPaste && contentX < -(headerItem.width + Theme.paddingLarge)) {
+                            keyboard.expandedPaste = true
+                            positionViewAtBeginning()
+                        }
+                    }
+
+                    Connections {
+                        target: anthy
+                        onCandidatesUpdated: listView.positionViewAtBeginning()
+                    }
+
+                    Connections {
+                        target: Clipboard
+                        onTextChanged: {
+                            if (Clipboard.hasText) {
+                                // need to have updated width before repositioning view
+                                positionerTimer.restart()
+                            }
+                        }
+                    }
+
+                    Timer {
+                        id: positionerTimer
+                        interval: 10
+                        onTriggered: listView.positionViewAtBeginning()
+                    }
                 }
             }
         }
     }
-    
+
+    Component {
+        id: pasteComponent
+        PasteButton {
+            onClicked: {
+                if (preedit.length > 0) {
+                    commit(preedit)
+                }
+                MInputMethodQuick.sendCommit(Clipboard.text)
+                keyboard.expandedPaste = false
+            }
+        }
+    }
+
     function handleKeyClick() {
         var handled = false
         keyboard.expandedPaste = false
@@ -187,7 +225,7 @@ InputHandler {
         } else if (pressedKey.text.length !== 0) {
             preedit = Parser.parse_romaji(preedit + pressedKey.text)
             anthy.update_candidates(preedit)
-            
+
             if (keyboard.shiftState !== ShiftState.LockedShift) {
                 keyboard.shiftState = ShiftState.NoShift
             }
@@ -198,7 +236,7 @@ InputHandler {
 
         return handled
     }
-    
+
     function accept(index) {
         console.log("attempting to accept", index)
         anthy.acceptPhrase(index, preedit)
@@ -213,7 +251,7 @@ InputHandler {
         MInputMethodQuick.sendCommit(text)
         reset()
     }
-    
+
     function commit_partial(text, pe) {
         MInputMethodQuick.sendCommit(text)
         preedit = pe
