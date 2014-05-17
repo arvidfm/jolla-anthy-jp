@@ -1,45 +1,9 @@
 
 import QtQuick 2.0
 import Sailfish.Silica 1.0
-import "ja_romaji"
 import ".."
 
 KeyboardLayout {
-    type: "ja_romaji"
-    
-    JaInputHandler {
-        id: jaInputHandler
-    }
-    
-    Component.onCompleted: init()
-    
-    Connections {
-        target: keyboard
-        onInputHandlerChanged: handlerChanged()
-    }
-    
-    function init() {
-        // force onInputHandlerChanged signal by
-        // making sure that the input handler was not
-        // previously pasteInputHandler
-        if (keyboard.allowLayoutChanges) {
-            var oldHandler = keyboard.inputHandler
-            keyboard.inputHandler = xt9Handler.item
-            oldHandler.active = false
-            keyboard.inputHandler.active = true
-        }
-    }
-    
-    function handlerChanged() {
-        if (keyboard.allowLayoutChanges && keyboard.inputHandler == pasteInputHandler &&
-                canvas.layoutRow.layout != null && canvas.layoutRow.layout.type == type) {
-            var oldHandler = keyboard.inputHandler
-            keyboard.inputHandler = jaInputHandler
-            oldHandler.active = false
-            jaInputHandler.active = true
-        }
-    }
-    
     KeyboardRow {
         CharacterKey { caption: "q"; captionShifted: "Q"; symView: "1"; symView2: "€" }
         CharacterKey { caption: "w"; captionShifted: "W"; symView: "2"; symView2: "£" }
@@ -68,7 +32,7 @@ KeyboardLayout {
 
     KeyboardRow {
         ShiftKey { }
-        
+
         CharacterKey { caption: "z"; captionShifted: "Z"; symView: "@"; symView2: "«" }
         CharacterKey { caption: "x"; captionShifted: "X"; symView: "&"; symView2: "»" }
         CharacterKey { caption: "c"; captionShifted: "C"; symView: "/"; symView2: "\""; accents: "cç"; accentsShifted: "CÇ" }
@@ -79,6 +43,6 @@ KeyboardLayout {
 
         BackspaceKey {}
     }
-    
+
     SpacebarRow { }
 }
