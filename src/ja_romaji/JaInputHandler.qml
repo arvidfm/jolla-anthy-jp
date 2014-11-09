@@ -31,8 +31,20 @@ InputHandler {
         property var candidates: ListModel { }
 
         function update_candidates(str) {
-            anthy.set_string(str)
+            console.debug("Setting anthy string to '" + str + "'")
             candidates.clear()
+
+            // WARNING: run set_prediction_string before set_string,
+            // otherwise commit_segment segfaults
+            anthy.set_prediction_string(str)
+            var pred = anthy.predictions()
+            var predictions = []
+            // don't add more than 15 predictions
+            for (var i = 0; i < pred && i < 15; i++) {
+                predictions.push(anthy.get_prediction(i))
+            }
+
+            anthy.set_string(str)
             var prim = ""
             var len = anthy.segments()
 
@@ -74,13 +86,9 @@ InputHandler {
                 candidates.insert(Math.min(5, candidates.count), katakana_item)
             }
 
-            anthy.set_prediction_string(str)
-            var pred = anthy.predictions()
-            // don't add more than 15 predictions
-            for (var i = 0; i < pred && i < 15; i++) {
-                var cand = anthy.get_prediction(i)
+            for (var i = 0; i < predictions.length; i++) {
+                var cand = predictions[i]
                 if (!(cand in included_phrases)) {
-                    //console.log("adding prediction", i, "out of", pred)
                     included_phrases[cand] = true
                     // add predictions after the primary choice
                     // (or first if there is no primary choice, i.e. preedit is empty)
@@ -93,9 +101,9 @@ InputHandler {
 
         function acceptPhrase(index, preedit) {
             var item = candidates.get(index)
-            console.log("accepting", index)
-            console.log("which is of the type", item.type, "and has the text", item.text)
-            console.log("segment", item.segment, "candidate", item.candidate)
+            console.debug("accepting", index)
+            console.debug("which is of the type", item.type, "and has the text", item.text)
+            console.debug("segment", item.segment, "candidate", item.candidate)
             if (item.type == "full") {
                 if (item.segment >= 0 && item.candidate >= 0) {
                     for (var i = 0; i < item.segment; i++) {
@@ -107,14 +115,14 @@ InputHandler {
                 anthy.commit_prediction(item.candidate)
                 commit(item.text)
             } else {
-                console.log("getting legment length")
+                console.debug("getting legment length")
                 var len = anthy.segment_length(item.segment)
-                console.log("segment length was", len)
-                console.log("commiting segment")
+                console.debug("segment length was", len)
+                console.debug("commiting segment")
                 anthy.commit_segment(item.segment, item.candidate)
-                console.log("commited segment")
+                console.debug("commited segment")
                 commit_partial(item.text, preedit.slice(len))
-                console.log("commited to text editor")
+                console.debug("commited to text editor")
             }
         }
 
@@ -238,7 +246,7 @@ InputHandler {
     }
 
     function accept(index) {
-        console.log("attempting to accept", index)
+        console.debug("attempting to accept", index)
         anthy.acceptPhrase(index, preedit)
     }
 
