@@ -78,4 +78,9 @@ KeyboardLayout {
     }
 
     SpacebarRow {}
+
+    type: "custom"
+    Component.onCompleted: {
+        keyboard.autocaps = false
+     }
 }
