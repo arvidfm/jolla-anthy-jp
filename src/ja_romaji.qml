@@ -58,7 +58,7 @@ KeyboardLayout {
         CharacterKey { caption: "j"; captionShifted: "J"; symView: ")"; symView2: "}" }
         CharacterKey { caption: "k"; captionShifted: "K"; symView: "!"; symView2: "¡" }
         CharacterKey { caption: "l"; captionShifted: "L"; symView: "?"; symView2: "¿" }
-        CharacterKey { caption: "ー"; } // captionShifted: "L"; symView: "?"; symView2: "¿" }
+        CharacterKey { caption: "ー"; captionShifted: "～"; symView: "・"; symView2: "…" }
     }
 
     KeyboardRow {
