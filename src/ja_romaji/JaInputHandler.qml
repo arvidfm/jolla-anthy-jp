@@ -34,8 +34,10 @@ InputHandler {
             console.debug("Setting anthy string to '" + str + "'")
             candidates.clear()
 
-            // WARNING: run set_prediction_string before set_string,
-            // otherwise commit_segment segfaults
+            // WARNING: Before committing a segment or a prediction, the corresponding
+            // set function (set_string/set_prediction_string) must be run.
+            // We run set_prediction_string first here, followed by set_string,
+            // so we don't need to re-run set_string when committing a segment.
             anthy.set_prediction_string(str)
             var pred = anthy.predictions()
             var predictions = []
@@ -112,6 +114,9 @@ InputHandler {
                 }
                 commit(item.text)
             } else if (item.type == "prediction") {
+                // NOTE: set_string was run before this, so we need to
+                // re-run set_prediction_string to avoid a segfault
+                anthy.set_prediction_string(preedit)
                 anthy.commit_prediction(item.candidate)
                 commit(item.text)
             } else {
@@ -119,6 +124,8 @@ InputHandler {
                 var len = anthy.segment_length(item.segment)
                 console.debug("segment length was", len)
                 console.debug("commiting segment")
+                // NOTE: no need to re-run set_string here since
+                // we already ran it once following set_prediction_string
                 anthy.commit_segment(item.segment, item.candidate)
                 console.debug("commited segment")
                 commit_partial(item.text, preedit.slice(len))
