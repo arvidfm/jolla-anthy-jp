@@ -208,6 +208,71 @@ InputHandler {
         }
     }
 
+    verticalItem: Component {
+        Item {
+            id: verticalContainer
+
+            SilicaListView {
+                id: verticalList
+
+                model: anthy.candidates
+                anchors.fill: parent
+                clip: true
+                header: Component {
+                    PasteButtonVertical {
+                        visible: Clipboard.hasText
+                        width: verticalList.width
+                        height: visible ? geometry.keyHeightLandscape : 0
+                        popupParent: verticalContainer
+                        popupAnchor: 2 // center
+
+                        onClicked: {
+                            commit(preedit)
+                            MInputMethodQuick.sendCommit(Clipboard.text)
+                        }
+                    }
+                }
+
+                delegate: BackgroundItem {
+                    onClicked: accept(model.index)
+                    width: parent.width
+                    height: geometry.keyHeightLandscape // assuming landscape!
+
+                    Text {
+                        width: parent.width
+                        horizontalAlignment: Text.AlignHCenter
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: index === 0 ? Theme.highlightColor : Theme.primaryColor
+                        font.pixelSize: Theme.fontSizeSmall
+                        fontSizeMode: Text.HorizontalFit
+//                        textFormat: Text.StyledText
+                        text: model.text
+                    }
+                }
+
+                Connections {
+                    target: anthy
+                    onCandidatesUpdated: {
+                        if (!clipboardChange.running) {
+                            verticalList.positionViewAtIndex(0, ListView.Beginning)
+                        }
+                    }
+                }
+                Connections {
+                    target: Clipboard
+                    onTextChanged: {
+                        verticalList.positionViewAtBeginning()
+                        clipboardChange.restart()
+                    }
+                }
+                Timer {
+                    id: clipboardChange
+                    interval: 1000
+                }
+            }
+        }
+    }
+
     function handleKeyClick() {
         var handled = false
         keyboard.expandedPaste = false
