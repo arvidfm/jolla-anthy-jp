@@ -31,6 +31,7 @@ import QtQuick 2.0
 import ".."
 
 KeyboardLayout {
+    type: "japan_romaji_anthy"
     splitSupported: true
 
     KeyboardRow {
@@ -79,8 +80,4 @@ KeyboardLayout {
 
     SpacebarRow {}
 
-    type: "custom"
-    Component.onCompleted: {
-        keyboard.autocaps = false
-     }
 }
