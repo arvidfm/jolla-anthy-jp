@@ -1,5 +1,5 @@
 Name: jolla-anthy-jp
-Version: 0.03
+Version: 0.04
 Release: 1%{?dist}
 Summary: Japanese layout and input method for Sailfish OS
 License: LGPLv2
