@@ -7,7 +7,6 @@ Source: %{name}-%{version}.tar.gz
 URL: https://github.com/BeholdMyGlory/jolla-anthy-jp
 Requires:   libanthy-qml-plugin
 Requires:   jolla-keyboard
-Requires:   jolla-xt9
 
 %description
 Allows you to type in Japanese on Sailfish OS.
